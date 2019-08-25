@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"flag"
 	"fmt"
 	"log"
@@ -11,9 +12,43 @@ import (
 	"syscall"
 
 	"approvalsvc"
+
+	_ "github.com/lib/pq"
+)
+
+const (
+	host     = "localhost"
+	port     = 5432
+	user     = "postgres"
+	password = "apple"
+	dbname   = "Approval"
 )
 
 func main() {
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+		"password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
+
+	db, err := sql.Open("postgres", psqlInfo)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		panic(err)
+	}
+
+	sqlStatement := `
+	INSERT INTO approval (id, state, comment, priority, service, permission)
+	VALUES ('123',2,'abc',0,'123',3)`
+
+	_, err = db.Exec(sqlStatement)
+	if err != nil {
+		panic(err)
+	}
+
 	var (
 		httpAddr = flag.String("http", ":8080", "http listen address")
 	)
