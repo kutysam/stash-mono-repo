@@ -73,7 +73,7 @@ func (e Endpoints) AddApproval(ctx context.Context, a model.ApprovalItem) (model
 		ID:          a.ID,
 		ServiceRule: a.ServiceRule,
 		Priority:    a.Priority,
-		Deadline:    a.Deadline,
+		Deadline:    *a.Deadline,
 		Comment:     a.Comment,
 	}
 

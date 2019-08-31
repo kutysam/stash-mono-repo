@@ -11,7 +11,7 @@ func UpdateApproval(ctx context.Context, req model.UpdateApprovalRequest) (resp 
 		ServiceRule: 4,
 		Priority:    2,
 		Comment:     "Comment",
-		Status:      "Pending",
+		Status:      model.STATUS_PENDING,
 	}
 
 	resp = model.UpdateApprovalResponse{

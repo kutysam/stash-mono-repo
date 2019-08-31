@@ -12,7 +12,7 @@ func GetApprovals(ctx context.Context, req model.GetApprovalsRequest) (resp mode
 		ServiceRule: 4,
 		Priority:    2,
 		Comment:     "Comment",
-		Status:      "Pending",
+		Status:      model.STATUS_PENDING,
 	}
 	approvalItems = append(approvalItems, approvalItem)
 

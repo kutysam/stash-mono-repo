@@ -26,8 +26,8 @@ type AddApprovalRequest struct {
 }
 
 type AddApprovalResponse struct {
-	ApprovalItem ApprovalItem `json:"approval_item"`
-	Err          string       `json:"err"`
+	ApprovalItem ApprovalItem `json:"approval_item,omitempty"`
+	Err          string       `json:"err,omitempty"`
 }
 
 // Change priority / status etc.
@@ -37,7 +37,7 @@ type UpdateApprovalRequest struct {
 	Priority    int       `json:"priority"`
 	Deadline    time.Time `json:"deadline,omitempty"`
 	Comment     string    `json:"comment,omitempty"`
-	Status      string    `json:"status,omitempty"`
+	Status      int       `json:"status,omitempty"`
 }
 
 // Change priority / status etc.
