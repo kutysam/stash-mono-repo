@@ -1,6 +1,7 @@
 package main
 
 import (
+	"approvalsvc/service/approvalsvc"
 	"context"
 	"database/sql"
 	"flag"
@@ -10,8 +11,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-
-	"approvalsvc"
 
 	_ "github.com/lib/pq"
 )
@@ -46,7 +45,7 @@ func main() {
 
 	_, err = db.Exec(sqlStatement)
 	if err != nil {
-		panic(err)
+		//		panic(err)
 	}
 
 	var (

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"approvalsvc/service/approvalsvc"
 	"context"
 	"database/sql"
 	"flag"
@@ -10,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"stash-mono-repo/service/approvalsvc"
 	"syscall"
 
 	_ "github.com/lib/pq"
@@ -29,9 +29,11 @@ func main() {
 		host, port, user, password, dbname)
 
 	db, err := sql.Open("postgres", psqlInfo)
+
 	if err != nil {
 		panic(err)
 	}
+
 	defer db.Close()
 
 	err = db.Ping()
@@ -39,14 +41,14 @@ func main() {
 		panic(err)
 	}
 
-	sqlStatement := `
-	INSERT INTO approval (id, state, comment, priority, service, permission)
+	/*sqlStatement := `
+	INSERT INTO approval (id, state, comment, priority, service, permission, deadline)
 	VALUES ('123',2,'abc',0,'123',3)`
 
 	_, err = db.Exec(sqlStatement)
 	if err != nil {
 		//		panic(err)
-	}
+	}*/
 
 	var (
 		httpAddr = flag.String("http", ":8000", "http listen address")
@@ -65,9 +67,10 @@ func main() {
 
 	// mapping endpoints
 	endpoints := approvalsvc.Endpoints{
-		GetEndpoint:      approvalsvc.MakeGetEndpoint(srv),
-		StatusEndpoint:   approvalsvc.MakeStatusEndpoint(srv),
-		ValidateEndpoint: approvalsvc.MakeValidateEndpoint(srv),
+		GetApprovalsEndpoint:   approvalsvc.MakeGetApprovalsEndpoint(srv),
+		AddApprovalEndpoint:    approvalsvc.MakeAddApprovalEndpoint(srv),
+		UpdateApprovalEndpoint: approvalsvc.MakeUpdateApprovalEndpoint(srv),
+		StatusEndpoint:         approvalsvc.MakeStatusEndpoint(srv),
 	}
 
 	// HTTP transport
