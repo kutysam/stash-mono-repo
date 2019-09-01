@@ -38,7 +38,7 @@ func main() {
 
 	// HTTP transport
 	go func() {
-		log.Println("approvalsvc is listening on port:", *httpAddr)
+		log.Println("usersvc is listening on port:", *httpAddr)
 		handler := usersvc.NewHTTPServer(ctx, endpoints)
 		errChan <- http.ListenAndServe(*httpAddr, handler)
 	}()

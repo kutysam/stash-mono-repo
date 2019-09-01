@@ -3,15 +3,22 @@ package approvalsvc
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"stash-mono-repo/service/approvalsvc/model"
 	"strconv"
 )
 
-// In the first part of the file we are mapping requests and responses to their JSON payload.
+const (
+	apikey        = "stashapprovalapikey"
+	invalidApiKey = "Invalid Api Key Provided"
+)
 
-// In the second part we will write "decoders" for our incoming requests
+// We will write "decoders" for our incoming requests
 func decodeGetApprovalRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	if !checkAuthentication(r) {
+		return nil, errors.New(invalidApiKey)
+	}
 	var req model.GetApprovalRequest
 	keys, ok := r.URL.Query()["id"]
 	if ok {
@@ -22,6 +29,9 @@ func decodeGetApprovalRequest(ctx context.Context, r *http.Request) (interface{}
 }
 
 func decodeGetApprovalsRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	if !checkAuthentication(r) {
+		return nil, errors.New(invalidApiKey)
+	}
 	var req model.GetApprovalsRequest
 	keys, ok := r.URL.Query()["limit"]
 	if ok {
@@ -60,6 +70,9 @@ func decodeGetApprovalsRequest(ctx context.Context, r *http.Request) (interface{
 }
 
 func decodeAddApprovalRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	if !checkAuthentication(r) {
+		return nil, errors.New(invalidApiKey)
+	}
 	var req model.AddApprovalRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -69,6 +82,9 @@ func decodeAddApprovalRequest(ctx context.Context, r *http.Request) (interface{}
 }
 
 func decodeUpdateApprovalRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	if !checkAuthentication(r) {
+		return nil, errors.New(invalidApiKey)
+	}
 	var req model.UpdateApprovalRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -85,4 +101,15 @@ func decodeStatusRequest(ctx context.Context, r *http.Request) (interface{}, err
 // Last but not least, we have the encoder for the response output
 func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
 	return json.NewEncoder(w).Encode(response)
+}
+
+func checkAuthentication(r *http.Request) bool {
+	if val, ok := r.Header["Authorization"]; ok {
+		if val[0] != apikey {
+			return false
+		}
+	} else {
+		return false
+	}
+	return true
 }

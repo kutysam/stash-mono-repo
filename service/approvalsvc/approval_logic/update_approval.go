@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"stash-mono-repo/service/approvalsvc/model"
@@ -212,12 +213,32 @@ func sendRequestToServiceRule(serviceRule model.ServiceRule, approvalToSend mode
 		return
 	}
 
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(approvalToSendBytes))
+	request, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(approvalToSendBytes))
+	if err != nil {
+		fmt.Println(err)
+		err = errors.New(model.ERROR_UPDATING_SERVICE)
+		return
+	}
+	request.Header.Add("Authorization", serviceRule.Apikey)
+	request.Header.Add("Content-type", "application/json")
+
+	client := &http.Client{}
+
+	resp, err := client.Do(request)
 	if err != nil {
 		fmt.Println(err) // TODO: Move to log service
 		err = errors.New(model.ERROR_UPDATING_SERVICE)
 		return
 	}
+
+	if resp.StatusCode != 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		fmt.Print(resp.StatusCode) // TODO: Move to log service
+		fmt.Println(string(body))  // TODO: Move to log service
+		err = errors.New(model.ERROR_UPDATING_SERVICE)
+		return
+	}
+
 	var result model.SendChangedApprovalResponse
 	json.NewDecoder(resp.Body).Decode(&result)
 

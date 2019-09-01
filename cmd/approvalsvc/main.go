@@ -20,7 +20,7 @@ const (
 	host     = "localhost"
 	port     = 5432
 	user     = "postgres"
-	password = "apple"
+	password = "apple" //TODO: Properly get this from environment variable
 	dbname   = "Approval"
 )
 
