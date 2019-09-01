@@ -1,13 +1,10 @@
 package approval_logic
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
-	"net/http"
 	"stash-mono-repo/service/approvalsvc/model"
 
 	"github.com/jinzhu/gorm"
@@ -86,6 +83,12 @@ func UpdateApproval(ctx context.Context, req model.UpdateApprovalRequest, db *go
 	} else if approvalItem.Status == model.STATUS_PENDING || approvalItem.Status == model.STATUS_ERROR {
 		if req.Status != nil && approvalItem.Status != *req.Status {
 			hasApprovalStatusChanged = true
+			tmpStatus := model.STATUS_ACKNOWLEDGED_APPROVED
+			if *req.Status == model.STATUS_REJECTED {
+				tmpStatus = model.STATUS_ACKNOWLEDGED_REJECTED
+			}
+			toUpdate["status"] = &tmpStatus
+			updatedApprovalItem, err = updateApprovalTable(db, toUpdate, approvalItem.ID)
 		} else {
 			// We update the table here and return to the client as the status hasn't been changed!
 			updatedApprovalItem, err = updateApprovalTable(db, toUpdate, approvalItem.ID)
@@ -104,33 +107,49 @@ func UpdateApproval(ctx context.Context, req model.UpdateApprovalRequest, db *go
 		Now we send the update to the defined service rule.
 		All request will be sent via the same format to any other approval receipient.
 	*/
-	var serverErr error
+
 	if hasApprovalStatusChanged {
 		serviceRuleID := approvalItem.ServiceRule
 		if req.ServiceRule != nil {
 			serviceRuleID = *req.ServiceRule
 		}
 
-		serviceRule, err := getServiceRule(db, serviceRuleID)
-		fmt.Println(err)
+		var serviceRule model.ServiceRule
+		serviceRule, err = getServiceRule(db, serviceRuleID)
+		if err != nil {
+			return
+		}
 
 		approvalToSend := model.ApprovalToSend{
 			ID:     id,
 			Status: *req.Status,
 		}
 
-		serverErr = sendRequestToServiceRule(serviceRule, approvalToSend)
+		err = sendRequestToServiceRule(serviceRule, approvalToSend)
 	}
 
 	// ------------ STEP 5 --------------
-	if serverErr != nil {
+	// We check if there is an error, if there is an error talking to the designated service, we stop and mark the request as errored and update the database.
+	// The developer can do some slack notification etc. over here to immediately alert the people.
+	// If there is no error, we just send a 200 OK and the updated fields back to client.
+	if err != nil {
+		fmt.Println(err) // TODO: Log this error down
 		toUpdate["status"] = model.STATUS_ERROR
-		if toUpdate["comment"] != nil {
+		toUpdate["comment"] = model.ERROR_UPDATING_SERVICE
+		updatedApprovalItem, err = updateApprovalTable(db, toUpdate, approvalItem.ID)
+		if err != nil {
+			err = errors.New(model.ERROR_UPDATING_SERVICE)
+			return
 		}
-
-		//toUpdate["comment"]
-
+	} else {
+		toUpdate["status"] = *req.Status
+		updatedApprovalItem, err = updateApprovalTable(db, toUpdate, approvalItem.ID)
+		if err != nil {
+			err = errors.New(model.ERROR_UPDATING_SERVICE)
+			return
+		}
 	}
+	resp.ApprovalItem = updatedApprovalItem
 	return
 }
 
@@ -179,25 +198,7 @@ func getServiceRule(db *gorm.DB, serviceRuleID int) (serviceRule model.ServiceRu
 
 // HTTP Call to the required service once all checks have been passed and approval has changed!
 func sendRequestToServiceRule(serviceRule model.ServiceRule, approvalToSend model.ApprovalToSend) (err error) {
-	url := "http://restapi3.apiary.io/notes"
-	fmt.Println("URL:>", url)
 
-	var jsonStr = []byte(`{"title":"Buy cheese and bread for breakfast."}`)
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
-	req.Header.Set("X-Custom-Header", "myvalue")
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		panic(err)
-	}
-	defer resp.Body.Close()
-
-	fmt.Println("response Status:", resp.Status)
-	fmt.Println("response Headers:", resp.Header)
-	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("response Body:", string(body))
 	return
 }
 
@@ -223,47 +224,3 @@ func updateApprovalTable(db *gorm.DB, toUpdate map[string]interface{}, id string
 
 	return
 }
-
-/*
-// Copy latest variables to a new approval object to reply back to client
-func updateNewApprovalItem(approvalItem model.ApprovalItem, toUpdate map[string]interface{}) (newApprovalItem model.ApprovalItem) {
-	newApprovalItem.ID = approvalItem.ID
-	if val, ok := toUpdate["status"]; ok {
-		newApprovalItem.Status = *(val.(*int))
-	} else {
-		newApprovalItem.Status = approvalItem.Status
-	}
-
-	if val, ok := toUpdate["title"]; ok {
-		newApprovalItem.Title = *(val.(*string))
-	} else {
-		newApprovalItem.Title = approvalItem.Title
-	}
-
-	if val, ok := toUpdate["description"]; ok {
-		newApprovalItem.Description = *(val.(*string))
-	} else {
-		newApprovalItem.Description = approvalItem.Description
-	}
-
-	if val, ok := toUpdate["serviceRule"]; ok {
-		newApprovalItem.ServiceRule = *(val.(*int))
-	} else {
-		newApprovalItem.ServiceRule = approvalItem.ServiceRule
-	}
-
-	if val, ok := toUpdate["deadline"]; ok {
-		newApprovalItem.Deadline = val.(*time.Time)
-	} else {
-		newApprovalItem.Deadline = approvalItem.Deadline
-	}
-
-	if val, ok := toUpdate["comment"]; ok {
-		newApprovalItem.Comment = *(val.(*string))
-	} else {
-		newApprovalItem.Comment = approvalItem.Comment
-	}
-
-	return
-}
-*/

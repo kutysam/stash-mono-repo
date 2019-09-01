@@ -43,7 +43,6 @@ type AddApprovalRequest struct {
 
 type AddApprovalResponse struct {
 	ApprovalItem ApprovalItem `json:"approval_item,omitempty"`
-	Err          string       `json:"err,omitempty"`
 }
 
 // Update the approval request
@@ -60,5 +59,4 @@ type UpdateApprovalRequest struct {
 // Change priority / status etc.
 type UpdateApprovalResponse struct {
 	ApprovalItem ApprovalItem `json:"approval_item"`
-	Err          string       `json:"err"`
 }

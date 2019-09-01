@@ -89,14 +89,8 @@ func MakeAddApprovalEndpoint(srv ApprovalService) endpoint.Endpoint {
 }
 
 // AddApproval endpoint mapping
-func (e Endpoints) AddApproval(ctx context.Context, a model.ApprovalItem) (model.AddApprovalResponse, error) {
-	req := model.AddApprovalRequest{
-		ID:          a.ID,
-		ServiceRule: a.ServiceRule,
-		Deadline:    *a.Deadline,
-		Comment:     a.Comment,
-	}
-
+func (e Endpoints) AddApproval(ctx context.Context) (model.AddApprovalResponse, error) {
+	req := model.AddApprovalRequest{}
 	resp, err := e.AddApprovalEndpoint(ctx, req)
 	if err != nil {
 		return model.AddApprovalResponse{}, err
@@ -117,7 +111,7 @@ func MakeUpdateApprovalEndpoint(srv ApprovalService) endpoint.Endpoint {
 
 // AUpdateApprovaldApproval endpoint mapping
 func (e Endpoints) UpdateApproval(ctx context.Context) (model.UpdateApprovalResponse, error) {
-	req := model.AddApprovalRequest{}
+	req := model.UpdateApprovalRequest{}
 	resp, err := e.UpdateApprovalEndpoint(ctx, req)
 	if err != nil {
 		return model.UpdateApprovalResponse{}, err
