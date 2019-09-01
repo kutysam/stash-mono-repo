@@ -23,6 +23,27 @@ const (
 	dbname   = "Approval"
 )
 
+var db *sql.DB
+
+func init() {
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+		"password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
+
+	db, err := sql.Open("postgres", psqlInfo)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("HI")
+}
+
 func main() {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
@@ -41,22 +62,13 @@ func main() {
 		panic(err)
 	}
 
-	/*sqlStatement := `
-	INSERT INTO approval (id, state, comment, priority, service, permission, deadline)
-	VALUES ('123',2,'abc',0,'123',3)`
-
-	_, err = db.Exec(sqlStatement)
-	if err != nil {
-		//		panic(err)
-	}*/
-
 	var (
 		httpAddr = flag.String("http", ":8000", "http listen address")
 	)
 	flag.Parse()
 	ctx := context.Background()
 	// our approvalsvc service
-	srv := approvalsvc.NewService()
+	srv := approvalsvc.NewService(db, log.Logger{})
 	errChan := make(chan error)
 
 	go func() {
@@ -67,10 +79,10 @@ func main() {
 
 	// mapping endpoints
 	endpoints := approvalsvc.Endpoints{
-		GetApprovalsEndpoint:   approvalsvc.MakeGetApprovalsEndpoint(srv),
-		AddApprovalEndpoint:    approvalsvc.MakeAddApprovalEndpoint(srv),
-		UpdateApprovalEndpoint: approvalsvc.MakeUpdateApprovalEndpoint(srv),
-		StatusEndpoint:         approvalsvc.MakeStatusEndpoint(srv),
+		GetApprovalsEndpoint:   approvalsvc.MakeGetApprovalsEndpoint(*srv),
+		AddApprovalEndpoint:    approvalsvc.MakeAddApprovalEndpoint(*srv),
+		UpdateApprovalEndpoint: approvalsvc.MakeUpdateApprovalEndpoint(*srv),
+		StatusEndpoint:         approvalsvc.MakeStatusEndpoint(*srv),
 	}
 
 	// HTTP transport

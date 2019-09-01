@@ -12,6 +12,16 @@ import (
 // In the second part we will write "decoders" for our incoming requests
 func decodeGetApprovalsRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	var req model.GetApprovalsRequest
+	keys, ok := r.URL.Query()["limit"]
+	if ok {
+		req.Limit = keys[0]
+	}
+
+	keys, ok = r.URL.Query()["offset"]
+	if ok {
+		req.Offset = keys[0]
+	}
+
 	return req, nil
 }
 

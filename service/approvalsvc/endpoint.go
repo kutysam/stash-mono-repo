@@ -16,7 +16,7 @@ type Endpoints struct {
 }
 
 // MakeStatusEndpoint returns the response from our service "status"
-func MakeStatusEndpoint(srv Service) endpoint.Endpoint {
+func MakeStatusEndpoint(srv ApprovalService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		_ = request.(model.StatusRequest) // we really just need the request, we don't use any value from it
 		s, err := srv.Status(ctx)
@@ -39,10 +39,10 @@ func (e Endpoints) Status(ctx context.Context) (string, error) {
 }
 
 // MakeGetApprovalsEndpoint returns the response from our service "get"
-func MakeGetApprovalsEndpoint(srv Service) endpoint.Endpoint {
+func MakeGetApprovalsEndpoint(srv ApprovalService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(model.GetApprovalsRequest)
-		d, err := srv.GetApprovals(ctx, req)
+		d, err := srv.GetApprovals(ctx, req, srv.db, srv.logger)
 		return d, err
 	}
 }
@@ -59,10 +59,10 @@ func (e Endpoints) GetApprovals(ctx context.Context) (model.GetApprovalsResponse
 }
 
 // MakeAddRequestEndpoint returns the response from our service "post"
-func MakeAddApprovalEndpoint(srv Service) endpoint.Endpoint {
+func MakeAddApprovalEndpoint(srv ApprovalService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(model.AddApprovalRequest)
-		d, err := srv.AddApproval(ctx, req)
+		d, err := srv.AddApproval(ctx, req, srv.db, srv.logger)
 		return d, err
 	}
 }
@@ -72,7 +72,6 @@ func (e Endpoints) AddApproval(ctx context.Context, a model.ApprovalItem) (model
 	req := model.AddApprovalRequest{
 		ID:          a.ID,
 		ServiceRule: a.ServiceRule,
-		Priority:    a.Priority,
 		Deadline:    *a.Deadline,
 		Comment:     a.Comment,
 	}
@@ -87,10 +86,10 @@ func (e Endpoints) AddApproval(ctx context.Context, a model.ApprovalItem) (model
 }
 
 // MakeUpdateRequestEndpoint returns the response from our service "put"
-func MakeUpdateApprovalEndpoint(srv Service) endpoint.Endpoint {
+func MakeUpdateApprovalEndpoint(srv ApprovalService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(model.UpdateApprovalRequest)
-		d, err := srv.UpdateApproval(ctx, req)
+		d, err := srv.UpdateApproval(ctx, req, srv.db, srv.logger)
 		return d, err
 	}
 }
