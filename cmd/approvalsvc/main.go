@@ -12,6 +12,7 @@ import (
 	"stash-mono-repo/service/approvalsvc"
 	"syscall"
 
+	"github.com/jinzhu/gorm"
 	_ "github.com/lib/pq"
 )
 
@@ -40,8 +41,6 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-
-	fmt.Println("HI")
 }
 
 func main() {
@@ -49,18 +48,13 @@ func main() {
 		"password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbname)
 
-	db, err := sql.Open("postgres", psqlInfo)
+	db, err := gorm.Open("postgres", psqlInfo)
 
 	if err != nil {
 		panic(err)
 	}
 
 	defer db.Close()
-
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
 
 	var (
 		httpAddr = flag.String("http", ":8000", "http listen address")
@@ -80,6 +74,7 @@ func main() {
 	// mapping endpoints
 	endpoints := approvalsvc.Endpoints{
 		GetApprovalsEndpoint:   approvalsvc.MakeGetApprovalsEndpoint(*srv),
+		GetApprovalEndpoint:    approvalsvc.MakeGetApprovalEndpoint(*srv),
 		AddApprovalEndpoint:    approvalsvc.MakeAddApprovalEndpoint(*srv),
 		UpdateApprovalEndpoint: approvalsvc.MakeUpdateApprovalEndpoint(*srv),
 		StatusEndpoint:         approvalsvc.MakeStatusEndpoint(*srv),

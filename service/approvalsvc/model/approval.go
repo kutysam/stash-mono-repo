@@ -16,10 +16,32 @@ type ApprovalItem struct {
 	UpdatedAt   *time.Time `json:"updated_at,omitempty"`
 }
 
+type ApprovalToSend struct {
+	ID     string `json:"id,omitempty"`
+	Status int    `json:"status,omitempty"`
+}
+
+type ServiceRule struct {
+	Name   string
+	Apikey string
+	URL    string
+}
+
 const (
-	STATUS_UNKNOWN   = 0
-	STATUS_PENDING   = 1
-	STATUS_APPROVED  = 2
-	STATUS_REJECTED  = 3
-	STATUS_CANCELLED = 4
+	STATUS_UNKNOWN     = 0
+	STATUS_ERROR       = 1
+	STATUS_PENDING     = 2
+	STATUS_APPROVED    = 3
+	STATUS_REJECTED    = 4
+	STATUS_CANCELLED   = 5
+	APPROVAL_TABLE     = "approval"
+	SERVICE_RULE_TABLE = "servicerule"
 )
+
+func CheckValidStatus(status int) bool {
+	if status >= STATUS_APPROVED && status <= STATUS_CANCELLED {
+		return true
+	} else {
+		return false
+	}
+}

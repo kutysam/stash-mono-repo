@@ -9,16 +9,26 @@ type StatusResponse struct {
 	Status string `json:"status"`
 }
 
+type GetApprovalRequest struct {
+	ID string `json:"id"`
+}
+
+type GetApprovalResponse struct {
+	ApprovalItem ApprovalItem `json:"approval_items"`
+}
+
 type GetApprovalsRequest struct {
-	Limit    string            `json:"limit,omitempty"`
-	Offset   string            `json:"offset,omitempty"`
-	Restrict map[string]string `json:"restrict,omitempty"`
-	Sort     map[string]string `json:"sort,omitempty"`
+	Limit   int `json:"limit,omitempty"`
+	Offset  int `json:"offset,omitempty"`
+	Default int `json:"default,omitempty"`
+
+	//TODO: In future, we can use the following to do proper querying for special cases, like sorting etc.
+	//Restrict map[string]string `json:"restrict,omitempty"`
+	//Sort     map[string]string `json:"sort,omitempty"`
 }
 
 type GetApprovalsResponse struct {
 	ApprovalItems []ApprovalItem `json:"approval_items"`
-	Err           string         `json:"err,omitempty"`
 }
 
 // Add a new request
@@ -38,13 +48,13 @@ type AddApprovalResponse struct {
 
 // Update the approval request
 type UpdateApprovalRequest struct {
-	ID          string    `json:"id"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	ServiceRule int       `json:"service_rule"`
-	Deadline    time.Time `json:"deadline,omitempty"`
-	Comment     string    `json:"comment,omitempty"`
-	Status      int       `json:"status,omitempty"`
+	ID          string     `json:"id"`
+	Title       *string    `json:"title"`
+	Description *string    `json:"description"`
+	ServiceRule *int       `json:"service_rule"`
+	Deadline    *time.Time `json:"deadline,omitempty"`
+	Comment     *string    `json:"comment,omitempty"`
+	Status      *int       `json:"status,omitempty"`
 }
 
 // Change priority / status etc.

@@ -10,6 +10,7 @@ import (
 // Endpoints are exposed
 type Endpoints struct {
 	StatusEndpoint         endpoint.Endpoint
+	GetApprovalEndpoint    endpoint.Endpoint
 	GetApprovalsEndpoint   endpoint.Endpoint
 	AddApprovalEndpoint    endpoint.Endpoint
 	UpdateApprovalEndpoint endpoint.Endpoint
@@ -36,6 +37,26 @@ func (e Endpoints) Status(ctx context.Context) (string, error) {
 	}
 	statusResp := resp.(model.StatusResponse)
 	return statusResp.Status, nil
+}
+
+// MakeGetApprovalsEndpoint returns the response from our service "get"
+func MakeGetApprovalEndpoint(srv ApprovalService) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(model.GetApprovalRequest)
+		d, err := srv.GetApproval(ctx, req, srv.db, srv.logger)
+		return d, err
+	}
+}
+
+// GetApprovals endpoint mapping
+func (e Endpoints) GetApproval(ctx context.Context) (model.GetApprovalResponse, error) {
+	req := model.GetApprovalsRequest{}
+	resp, err := e.GetApprovalEndpoint(ctx, req)
+	if err != nil {
+		return model.GetApprovalResponse{}, err
+	}
+	getApprovalsResp := resp.(model.GetApprovalResponse)
+	return getApprovalsResp, nil
 }
 
 // MakeGetApprovalsEndpoint returns the response from our service "get"

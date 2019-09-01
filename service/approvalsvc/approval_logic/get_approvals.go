@@ -2,32 +2,41 @@ package approval_logic
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
 	"stash-mono-repo/service/approvalsvc/model"
+
+	"github.com/jinzhu/gorm"
 )
 
-const (
-	sqlSelectStatement = `SELECT * FROM approval`
-)
-
-func GetApprovals(ctx context.Context, req model.GetApprovalsRequest, db *sql.DB, logger log.Logger) (resp model.GetApprovalsResponse, err error) {
-	var rows *sql.Rows
-	rows, err = db.Query(sqlSelectStatement)
+func GetApprovals(ctx context.Context, req model.GetApprovalsRequest, db *gorm.DB, logger log.Logger) (resp model.GetApprovalsResponse, err error) {
 	approvalItems := []model.ApprovalItem{}
+	tmpDB := db
 
-	for rows.Next() {
-		tmp := model.ApprovalItem{}
-		err = rows.Scan(&tmp.ID, &tmp.Title, &tmp.Description, &tmp.ServiceRule, &tmp.Comment, &tmp.Status, &tmp.Deadline, &tmp.CreatedAt, &tmp.UpdatedAt)
-		if err != nil {
-			fmt.Println(err) //Change to log service when available
-			err = errors.New(model.ERROR_DATABASE_ERROR)
-		}
-		approvalItems = append(approvalItems, tmp)
+	// TODO: Improve this into a proper sorting / where query.
+	switch req.Default {
+	case 0:
+		tmpDB = db.Table(model.APPROVAL_TABLE).Order("deadline ASC").Where("status = ?", model.STATUS_PENDING)
+	case 1:
+		tmpDB = db.Table(model.APPROVAL_TABLE).Order("deadline ASC")
 	}
 
+	if req.Offset != -1 {
+		tmpDB = tmpDB.Offset(req.Offset)
+	}
+
+	if req.Limit != -1 {
+		tmpDB = tmpDB.Limit(req.Limit)
+	}
+
+	tmpDB.Find(&approvalItems)
+
+	if tmpDB.Error != nil {
+		fmt.Println(tmpDB.Error) //TODO: Move to log service
+		err = errors.New(model.ERROR_DATABASE_ERROR)
+		return
+	}
 	resp = model.GetApprovalsResponse{
 		ApprovalItems: approvalItems,
 	}

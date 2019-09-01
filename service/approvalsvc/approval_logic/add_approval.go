@@ -2,13 +2,14 @@ package approval_logic
 
 import (
 	"context"
-	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"stash-mono-repo/service/approvalsvc/model"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
 )
 
@@ -18,7 +19,7 @@ const (
 	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`
 )
 
-func AddApproval(ctx context.Context, req model.AddApprovalRequest, db *sql.DB, logger log.Logger) (resp model.AddApprovalResponse, err error) {
+func AddApproval(ctx context.Context, req model.AddApprovalRequest, db *gorm.DB, logger log.Logger) (resp model.AddApprovalResponse, err error) {
 	id := uuid.New().String()
 	title := req.Title
 	description := req.Description
@@ -53,18 +54,21 @@ func AddApproval(ctx context.Context, req model.AddApprovalRequest, db *sql.DB, 
 		Description: description,
 		ServiceRule: serviceRule,
 		Comment:     comment,
-		Status:      model.STATUS_PENDING,
+		Status:      status,
 		Deadline:    deadline,
 		CreatedAt:   &createdAt,
 	}
 
-	_, err = db.Exec(sqlInsertStatement, id, title, description, serviceRule, comment, status, deadline, createdAt, createdAt)
-	if err != nil {
-		pqErr := err.(*pq.Error)
-		if pqErr.Code == model.PQ_ERROR_FOREIGN_KEY_VIOLATION && pqErr.Constraint == model.PQ_SERVICE_RULE_CONSTRAINT {
-			err = errors.New(model.ERROR_SERVICE_RULE_INVALID_CONSTRAINT)
-			return
+	tmpDB := db.Table(model.APPROVAL_TABLE).Create(&approvalItem)
+	if tmpDB.Error != nil {
+		pqErr, ok := tmpDB.Error.(*pq.Error)
+		if ok {
+			if pqErr.Code == model.PQ_ERROR_FOREIGN_KEY_VIOLATION && pqErr.Constraint == model.PQ_SERVICE_RULE_CONSTRAINT {
+				err = errors.New(model.ERROR_SERVICE_RULE_INVALID_CONSTRAINT)
+				return
+			}
 		}
+		fmt.Println(tmpDB.Error) //TODO: Move to log service
 		err = errors.New(model.ERROR_DATABASE_ERROR)
 		return
 	}
