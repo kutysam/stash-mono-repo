@@ -11,6 +11,7 @@ const (
 	ERROR_INVALID_STATUS                  = "You provided with an invalid status. Please check the documentation for valid statuses."
 	ERROR_COMMENT_UPDATE_ONLY             = "Since this request has been marked as approved / rejected / cancelled, You are not able to edit other fields, other than comment."
 	ERROR_UPDATING_SERVICE                = "[SERVER]: There could be a possible issue updating the service on the other end. Please check to see if the state has been changed and submit approval again."
+	ERROR_UNABLE_TO_MARSHAL               = "Unable to do json marshaling"
 	PQ_ERROR_FOREIGN_KEY_VIOLATION        = "23503"
 	PQ_ERROR_NO_ROWS_FOUND                = "No Records with the same ID were found!"
 	PQ_SERVICE_RULE_CONSTRAINT            = "ServiceRuleFK"

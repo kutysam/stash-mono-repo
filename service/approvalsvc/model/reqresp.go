@@ -60,3 +60,12 @@ type UpdateApprovalRequest struct {
 type UpdateApprovalResponse struct {
 	ApprovalItem ApprovalItem `json:"approval_item"`
 }
+
+type SendChangedApprovalRequest struct {
+	ID     string `json:"id"`
+	Status int    `json:"status"`
+}
+
+type SendChangedApprovalResponse struct {
+	Status string `json:"status"`
+}

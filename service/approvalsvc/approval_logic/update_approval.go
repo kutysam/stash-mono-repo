@@ -1,10 +1,13 @@
 package approval_logic
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"stash-mono-repo/service/approvalsvc/model"
 
 	"github.com/jinzhu/gorm"
@@ -120,7 +123,7 @@ func UpdateApproval(ctx context.Context, req model.UpdateApprovalRequest, db *go
 			return
 		}
 
-		approvalToSend := model.ApprovalToSend{
+		approvalToSend := model.SendChangedApprovalRequest{
 			ID:     id,
 			Status: *req.Status,
 		}
@@ -136,11 +139,13 @@ func UpdateApproval(ctx context.Context, req model.UpdateApprovalRequest, db *go
 		fmt.Println(err) // TODO: Log this error down
 		toUpdate["status"] = model.STATUS_ERROR
 		toUpdate["comment"] = model.ERROR_UPDATING_SERVICE
-		updatedApprovalItem, err = updateApprovalTable(db, toUpdate, approvalItem.ID)
-		if err != nil {
-			err = errors.New(model.ERROR_UPDATING_SERVICE)
-			return
+		var err1 error
+		updatedApprovalItem, err1 = updateApprovalTable(db, toUpdate, approvalItem.ID)
+		if err1 != nil {
+			err1 = errors.New(model.ERROR_UPDATING_SERVICE)
+			err = err1
 		}
+		return
 	} else {
 		toUpdate["status"] = *req.Status
 		updatedApprovalItem, err = updateApprovalTable(db, toUpdate, approvalItem.ID)
@@ -197,16 +202,34 @@ func getServiceRule(db *gorm.DB, serviceRuleID int) (serviceRule model.ServiceRu
 }
 
 // HTTP Call to the required service once all checks have been passed and approval has changed!
-func sendRequestToServiceRule(serviceRule model.ServiceRule, approvalToSend model.ApprovalToSend) (err error) {
+func sendRequestToServiceRule(serviceRule model.ServiceRule, approvalToSend model.SendChangedApprovalRequest) (err error) {
+	url := serviceRule.URL
+
+	approvalToSendBytes, err := json.Marshal(approvalToSend)
+	if err != nil {
+		fmt.Println(err) // TODO: Move to log service
+		err = errors.New(model.ERROR_UNABLE_TO_MARSHAL)
+		return
+	}
+
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(approvalToSendBytes))
+	if err != nil {
+		fmt.Println(err) // TODO: Move to log service
+		err = errors.New(model.ERROR_UPDATING_SERVICE)
+		return
+	}
+	var result model.SendChangedApprovalResponse
+	json.NewDecoder(resp.Body).Decode(&result)
+
+	if result.Status == "OK" {
+		fmt.Println("Successfully sent approval!")
+	}
 
 	return
 }
 
 // We update the table here
 func updateApprovalTable(db *gorm.DB, toUpdate map[string]interface{}, id string) (updatedModel model.ApprovalItem, err error) {
-	db.Debug()
-	db.LogMode(true)
-	//a := model.ApprovalItem{}
 	tmpDB := db.Table(model.APPROVAL_TABLE).Where("id = ?", id).Updates(toUpdate)
 	if tmpDB.Error != nil {
 		fmt.Println(tmpDB.Error) //TODO: Move to log service

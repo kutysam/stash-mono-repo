@@ -1,40 +1,36 @@
-package approvalsvc
+package usersvc
 
 import (
 	"context"
-	"time"
+	"fmt"
+	"stash-mono-repo/service/usersvc/model"
+	"strconv"
 )
 
 // Service provides some "date capabilities" to your application
 type Service interface {
 	Status(ctx context.Context) (string, error)
-	Get(ctx context.Context) (string, error)
-	Validate(ctx context.Context, date string) (bool, error)
+	GetApproval(ctx context.Context, req model.GetApprovalRequest) (model.GetApprovalResponse, error)
 }
 
-type dateService struct{}
+type UserService struct{}
 
 // NewService makes a new Service.
-func NewService() Service {
-	return dateService{}
+func NewService() *UserService {
+	return &UserService{}
 }
 
 // Status only tell us that our service is ok!
-func (dateService) Status(ctx context.Context) (string, error) {
+func (UserService) Status(ctx context.Context) (string, error) {
 	return "ok", nil
 }
 
-// Get will return today's date
-func (dateService) Get(ctx context.Context) (string, error) {
-	now := time.Now()
-	return now.Format("02/01/2006"), nil
-}
-
 // Validate will check if the date today's date
-func (dateService) Validate(ctx context.Context, date string) (bool, error) {
-	_, err := time.Parse("02/01/2006", date)
-	if err != nil {
-		return false, err
+func (UserService) GetApproval(ctx context.Context, req model.GetApprovalRequest) (resp model.GetApprovalResponse, err error) {
+	resp = model.GetApprovalResponse{
+		Status: "OK",
 	}
-	return true, nil
+
+	fmt.Println("Approval Received for " + req.ID + " Status: " + strconv.Itoa(req.Status))
+	return
 }

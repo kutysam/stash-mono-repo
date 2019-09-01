@@ -1,4 +1,4 @@
-package approvalsvc
+package usersvc
 
 import (
 	"context"
@@ -19,15 +19,9 @@ func NewHTTPServer(ctx context.Context, endpoints Endpoints) http.Handler {
 		encodeResponse,
 	))
 
-	r.Methods("GET").Path("/get").Handler(httptransport.NewServer(
-		endpoints.GetEndpoint,
-		decodeGetRequest,
-		encodeResponse,
-	))
-
-	r.Methods("POST").Path("/validate").Handler(httptransport.NewServer(
-		endpoints.ValidateEndpoint,
-		decodeValidateRequest,
+	r.Methods("POST").Path("/approval").Handler(httptransport.NewServer(
+		endpoints.ApprovalEndpoint,
+		decodeApprovalRequest,
 		encodeResponse,
 	))
 

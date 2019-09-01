@@ -16,11 +16,6 @@ type ApprovalItem struct {
 	UpdatedAt   *time.Time `json:"updated_at,omitempty"`
 }
 
-type ApprovalToSend struct {
-	ID     string `json:"id"`
-	Status int    `json:"status"`
-}
-
 type ServiceRule struct {
 	Name   string
 	Apikey string

@@ -1,90 +1,57 @@
-package approvalsvc
+package usersvc
 
 import (
 	"context"
-	"errors"
+	"stash-mono-repo/service/usersvc/model"
 
 	"github.com/go-kit/kit/endpoint"
 )
 
 // Endpoints are exposed
 type Endpoints struct {
-	GetEndpoint      endpoint.Endpoint
 	StatusEndpoint   endpoint.Endpoint
-	ValidateEndpoint endpoint.Endpoint
-}
-
-// MakeGetEndpoint returns the response from our service "get"
-func MakeGetEndpoint(srv Service) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		_ = request.(getRequest) // we really just need the request, we don't use any value from it
-		d, err := srv.Get(ctx)
-		if err != nil {
-			return getResponse{d, err.Error()}, nil
-		}
-		return getResponse{d, ""}, nil
-	}
+	ApprovalEndpoint endpoint.Endpoint
 }
 
 // MakeStatusEndpoint returns the response from our service "status"
 func MakeStatusEndpoint(srv Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		_ = request.(statusRequest) // we really just need the request, we don't use any value from it
+		_ = request.(model.StatusRequest) // we really just need the request, we don't use any value from it
 		s, err := srv.Status(ctx)
 		if err != nil {
-			return statusResponse{s}, err
+			return model.StatusResponse{s}, err
 		}
-		return statusResponse{s}, nil
+		return model.StatusResponse{s}, nil
 	}
 }
 
-// MakeValidateEndpoint returns the response from our service "validate"
-func MakeValidateEndpoint(srv Service) endpoint.Endpoint {
+// MakeApprovalEndpoint returns the response from our service "approval"
+func MakeApprovalEndpoint(srv Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(validateRequest)
-		b, err := srv.Validate(ctx, req.Date)
-		if err != nil {
-			return validateResponse{b, err.Error()}, nil
-		}
-		return validateResponse{b, ""}, nil
+		req := request.(model.GetApprovalRequest)
+		d, err := srv.GetApproval(ctx, req)
+		return d, err
 	}
-}
-
-// Get endpoint mapping
-func (e Endpoints) Get(ctx context.Context) (string, error) {
-	req := getRequest{}
-	resp, err := e.GetEndpoint(ctx, req)
-	if err != nil {
-		return "", err
-	}
-	getResp := resp.(getResponse)
-	if getResp.Err != "" {
-		return "", errors.New(getResp.Err)
-	}
-	return getResp.Date, nil
 }
 
 // Status endpoint mapping
 func (e Endpoints) Status(ctx context.Context) (string, error) {
-	req := statusRequest{}
+	req := model.StatusRequest{}
 	resp, err := e.StatusEndpoint(ctx, req)
 	if err != nil {
 		return "", err
 	}
-	statusResp := resp.(statusResponse)
+	statusResp := resp.(model.StatusResponse)
 	return statusResp.Status, nil
 }
 
-// Validate endpoint mapping
-func (e Endpoints) Validate(ctx context.Context, date string) (bool, error) {
-	req := validateRequest{Date: date}
-	resp, err := e.ValidateEndpoint(ctx, req)
+// Approval endpoint mapping
+func (e Endpoints) GetApproval(ctx context.Context, date string) (model.GetApprovalResponse, error) {
+	req := model.GetApprovalRequest{}
+	resp, err := e.ApprovalEndpoint(ctx, req)
 	if err != nil {
-		return false, err
+		return model.GetApprovalResponse{}, err
 	}
-	validateResp := resp.(validateResponse)
-	if validateResp.Err != "" {
-		return false, errors.New(validateResp.Err)
-	}
-	return validateResp.Valid, nil
+	approvalResp := resp.(model.GetApprovalResponse)
+	return approvalResp, nil
 }
