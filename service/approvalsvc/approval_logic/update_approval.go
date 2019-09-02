@@ -20,12 +20,13 @@ import (
 	2) Retreive current approval object from database and check to see if ID exists
 	3) Do a status check so that only comments can be updated for approved / rejected and so on...
 	4) [Conditional] If the update is for status, we call the designated service (service rule)
-	5) Update database accordingly
+	5) Update database accordingly [If it is an update for status, we will mark it as acknowledged_approved / acknowledged_rejected / acknowledged_cancelled]
 	6) Send updated result back to client
+	7) We will call a goroutine (New thread) to update the designated service if (4 is true)
+	8) Update databse accordingly after this.
 */
 
 func UpdateApproval(ctx context.Context, req model.UpdateApprovalRequest, db *gorm.DB, logger log.Logger) (resp model.UpdateApprovalResponse, err error) {
-
 	// ------------ STEP 1 --------------
 	// Check request to see if it is valid
 	id := req.ID
@@ -129,32 +130,11 @@ func UpdateApproval(ctx context.Context, req model.UpdateApprovalRequest, db *go
 			Status: *req.Status,
 		}
 
-		err = sendRequestToServiceRule(serviceRule, approvalToSend)
+		// Call a go routine to thread branch out a thread for the httpcall.
+		// Meanwhile, we will close the connection with the approver by sending him a acknowledged approved / rejected / cancelled status
+		go sendRequestToServiceRule(db, serviceRule, approvalToSend, toUpdate)
 	}
 
-	// ------------ STEP 5 --------------
-	// We check if there is an error, if there is an error talking to the designated service, we stop and mark the request as errored and update the database.
-	// The developer can do some slack notification etc. over here to immediately alert the people.
-	// If there is no error, we just send a 200 OK and the updated fields back to client.
-	if err != nil {
-		fmt.Println(err) // TODO: Log this error down
-		toUpdate["status"] = model.STATUS_ERROR
-		toUpdate["comment"] = model.ERROR_UPDATING_SERVICE
-		var err1 error
-		updatedApprovalItem, err1 = updateApprovalTable(db, toUpdate, approvalItem.ID)
-		if err1 != nil {
-			err1 = errors.New(model.ERROR_UPDATING_SERVICE)
-			err = err1
-		}
-		return
-	} else {
-		toUpdate["status"] = *req.Status
-		updatedApprovalItem, err = updateApprovalTable(db, toUpdate, approvalItem.ID)
-		if err != nil {
-			err = errors.New(model.ERROR_UPDATING_SERVICE)
-			return
-		}
-	}
 	resp.ApprovalItem = updatedApprovalItem
 	return
 }
@@ -203,7 +183,7 @@ func getServiceRule(db *gorm.DB, serviceRuleID int) (serviceRule model.ServiceRu
 }
 
 // HTTP Call to the required service once all checks have been passed and approval has changed!
-func sendRequestToServiceRule(serviceRule model.ServiceRule, approvalToSend model.SendChangedApprovalRequest) (err error) {
+func sendRequestToServiceRule(db *gorm.DB, serviceRule model.ServiceRule, approvalToSend model.SendChangedApprovalRequest, toUpdate map[string]interface{}) (err error) {
 	url := serviceRule.URL
 
 	approvalToSendBytes, err := json.Marshal(approvalToSend)
@@ -224,7 +204,7 @@ func sendRequestToServiceRule(serviceRule model.ServiceRule, approvalToSend mode
 
 	client := &http.Client{}
 
-	resp, err := client.Do(request)
+	resp, err := client.Do(request) // TODO: Do a maximum of 3 retries if it fails.
 	if err != nil {
 		fmt.Println(err) // TODO: Move to log service
 		err = errors.New(model.ERROR_UPDATING_SERVICE)
@@ -237,13 +217,40 @@ func sendRequestToServiceRule(serviceRule model.ServiceRule, approvalToSend mode
 		fmt.Println(string(body))  // TODO: Move to log service
 		err = errors.New(model.ERROR_UPDATING_SERVICE)
 		return
+	} else {
+		var result model.SendChangedApprovalResponse
+		json.NewDecoder(resp.Body).Decode(&result)
+
+		if result.Status != approvalToSend.Status {
+			fmt.Println("Seems like the server has already received the approval status before and it is different from what you are sending. We will be using " + string(result.Status) + " approval status instead of your requested approval status: " + string(approvalToSend.Status) + " ERROR CODE: " + string(result.ErrorCode)) //TODO: Log this down
+			toUpdate["status"] = result.Status
+		} else {
+			toUpdate["status"] = result.Status
+		}
 	}
 
-	var result model.SendChangedApprovalResponse
-	json.NewDecoder(resp.Body).Decode(&result)
-
-	if result.Status == "OK" {
-		fmt.Println("Successfully sent approval!")
+	// ------------ STEP 5 --------------
+	// We check if there is an error, if there is an error talking to the designated service, we stop and mark the request as errored and update the database.
+	// The developer can do some slack notification etc. over here to immediately alert the people.
+	// If there is no error, we just send a 200 OK and the updated fields back to client.
+	if err != nil {
+		fmt.Println(err) // TODO: Log this error down
+		toUpdate["status"] = model.STATUS_ERROR
+		toUpdate["comment"] = model.ERROR_UPDATING_SERVICE
+		var err1 error
+		_, err1 = updateApprovalTable(db, toUpdate, approvalToSend.ID)
+		if err1 != nil {
+			err1 = errors.New(model.ERROR_UPDATING_SERVICE)
+			err = err1
+		}
+		return
+	} else {
+		// This is the best success that we achieved. No errors all the way. We update database with the final status (Either approved / rejected / cancelled)
+		_, err = updateApprovalTable(db, toUpdate, approvalToSend.ID)
+		if err != nil {
+			err = errors.New(model.ERROR_UPDATING_SERVICE)
+			return
+		}
 	}
 
 	return

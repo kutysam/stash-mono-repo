@@ -67,5 +67,7 @@ type SendChangedApprovalRequest struct {
 }
 
 type SendChangedApprovalResponse struct {
-	Status string `json:"status"`
+	ID        string `json: "id"`
+	Status    int    `json:"status"`
+	ErrorCode int    `json:"error_code"`
 }

@@ -1,12 +1,14 @@
 package model
 
 type GetApprovalRequest struct {
-	ID     string
-	Status int `json:"status,omitempty"`
+	ID     string `json:"id"`
+	Status int    `json:"status"`
 }
 
 type GetApprovalResponse struct {
-	Status string `json:"status"`
+	ID        string `json: "id"`
+	Status    int    `json:"status"`
+	ErrorCode int    `json:"error_code"`
 }
 
 type StatusRequest struct{}
