@@ -23,16 +23,17 @@ type ServiceRule struct {
 }
 
 const (
-	STATUS_UNKNOWN               = 0
-	STATUS_ERROR                 = 1
-	STATUS_PENDING               = 2
-	STATUS_APPROVED              = 3
-	STATUS_REJECTED              = 4
-	STATUS_CANCELLED             = 5
-	STATUS_ACKNOWLEDGED_APPROVED = 6 //Server Only Option
-	STATUS_ACKNOWLEDGED_REJECTED = 7 //Server Only Option
-	APPROVAL_TABLE               = "approval"
-	SERVICE_RULE_TABLE           = "servicerule"
+	STATUS_UNKNOWN                = 0
+	STATUS_ERROR                  = 1
+	STATUS_PENDING                = 2
+	STATUS_APPROVED               = 3
+	STATUS_REJECTED               = 4
+	STATUS_CANCELLED              = 5
+	STATUS_ACKNOWLEDGED_APPROVED  = 6 //Server Only Option
+	STATUS_ACKNOWLEDGED_REJECTED  = 7 //Server Only Option
+	STATUS_ACKNOWLEDGED_CANCELLED = 8 //Server Only Option
+	APPROVAL_TABLE                = "approval"
+	SERVICE_RULE_TABLE            = "servicerule"
 )
 
 func CheckValidStatus(status int) bool {
