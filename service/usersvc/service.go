@@ -28,7 +28,8 @@ func (UserService) Status(ctx context.Context) (string, error) {
 // Validate will check if the date today's date
 func (UserService) GetApproval(ctx context.Context, req model.GetApprovalRequest) (resp model.GetApprovalResponse, err error) {
 	resp = model.GetApprovalResponse{
-		Status: "OK",
+		ID:     req.ID,
+		Status: req.Status,
 	}
 
 	fmt.Println("Approval Received for " + req.ID + " Status: " + strconv.Itoa(req.Status))
