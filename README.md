@@ -10,8 +10,7 @@ The purpose of this is to simulate a simple approval service based on some rules
 4. [Optional], change the db connection string in main.go and run the SQL script `approvaldb.sql` to have seed data. We are using postgresDB here.
 
 # API Documentation
-
-Refer to the swagger documentation here
+Refer to the swagger documentation [here](https://app.swaggerhub.com/apis/kutysam/StashApprovalAPI/1)
 
 # Enums and description
 
