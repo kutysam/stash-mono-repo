@@ -88,9 +88,16 @@ func UpdateApproval(ctx context.Context, req model.UpdateApprovalRequest, db *go
 	} else if approvalItem.Status == model.STATUS_PENDING || approvalItem.Status == model.STATUS_ERROR {
 		if req.Status != nil && approvalItem.Status != *req.Status {
 			hasApprovalStatusChanged = true
-			tmpStatus := model.STATUS_ACKNOWLEDGED_APPROVED
-			if *req.Status == model.STATUS_REJECTED {
+			var tmpStatus int
+			if *req.Status == model.STATUS_ACKNOWLEDGED_APPROVED {
+				tmpStatus = model.STATUS_ACKNOWLEDGED_APPROVED
+			} else if *req.Status == model.STATUS_REJECTED {
 				tmpStatus = model.STATUS_ACKNOWLEDGED_REJECTED
+			} else if *req.Status == model.STATUS_CANCELLED {
+				tmpStatus = model.STATUS_ACKNOWLEDGED_CANCELLED
+			} else {
+				err = errors.New("You can only transition from error / pending --> approved / cancelled / rejected.")
+				return
 			}
 			toUpdate["status"] = &tmpStatus
 			updatedApprovalItem, err = updateApprovalTable(db, toUpdate, approvalItem.ID)
@@ -104,6 +111,9 @@ func UpdateApproval(ctx context.Context, req model.UpdateApprovalRequest, db *go
 				return
 			}
 		}
+	} else {
+		err = errors.New("Sorry, you cannot update the request. Your approval object in a state where we are waiting for the other service's response.")
+		return
 	}
 
 	// ------------ STEP 4 --------------
@@ -155,7 +165,7 @@ func fillInUpdateFields(req model.UpdateApprovalRequest) (map[string]interface{}
 		toUpdate["description"] = req.Description
 	}
 	if req.ServiceRule != nil {
-		toUpdate["serviceRule"] = req.ServiceRule
+		toUpdate["service_rule"] = req.ServiceRule
 	}
 	if req.Deadline != nil {
 		toUpdate["deadline"] = req.Deadline
