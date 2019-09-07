@@ -74,7 +74,7 @@ Errors are checked accordingly but are not shown in the sequence diagram for now
 4. Yes, the repo is a mono repo but, it is as such just for demonstration. User service is considered to be the '3rd' party service. There is no documentation for service rule, if you want to create a new service rule, please update the database directly for now. Right now, we only have 2 service rules, service rule 1 = http://kutysam.ddns.net:8001/approval and service rule 2 = invalidurl (Just to show error)
 
 # Future Changes
-## V1.0 [We cannot launch without these 3 important features]
+## V1.0 [We cannot launch without these few important features]
 1. Have another table called history. We will log down every change that happens to any approval object to here, be it, comment, title etc. This will be used as an audit log.
 2. Have proper security measures (API_KEY for services and JWT for user accounts)
 3. Have another column called previous state so that the user will know which state was he in, in case the state changes to error. Whether we should strictly follow the previous state, needs a team discussion.
