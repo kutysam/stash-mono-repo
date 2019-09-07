@@ -37,22 +37,18 @@ func decodeGetApprovalsRequest(ctx context.Context, r *http.Request) (interface{
 	if ok {
 		defaultInt, err := strconv.Atoi(keys[0])
 		if err != nil {
-			req.Limit = -1
+			return nil, err
 		}
-		req.Limit = defaultInt
-	} else {
-		req.Limit = -1
+		req.Limit = &defaultInt
 	}
 
 	keys, ok = r.URL.Query()["offset"]
 	if ok {
 		defaultInt, err := strconv.Atoi(keys[0])
 		if err != nil {
-			req.Offset = -1
+			return nil, err
 		}
-		req.Offset = defaultInt
-	} else {
-		req.Offset = -1
+		req.Offset = &defaultInt
 	}
 
 	keys, ok = r.URL.Query()["default"]

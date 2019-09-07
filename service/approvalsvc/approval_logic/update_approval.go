@@ -182,7 +182,7 @@ func getServiceRule(db *gorm.DB, serviceRuleID int) (serviceRule model.ServiceRu
 	tmpDB := db.Table(model.SERVICE_RULE_TABLE).Where("id = ?", serviceRuleID).First(&serviceRule)
 	if tmpDB.Error != nil {
 		if tmpDB.Error == gorm.ErrRecordNotFound {
-			err = errors.New(model.PQ_ERROR_NO_ROWS_FOUND)
+			err = errors.New(model.PQ_SUCH_SERVICE_RULE_FOUND)
 			return
 		}
 

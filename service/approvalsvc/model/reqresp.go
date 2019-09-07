@@ -18,9 +18,9 @@ type GetApprovalResponse struct {
 }
 
 type GetApprovalsRequest struct {
-	Limit   int `json:"limit,omitempty"`
-	Offset  int `json:"offset,omitempty"`
-	Default int `json:"default,omitempty"`
+	Limit   *int `json:"limit,omitempty"`
+	Offset  *int `json:"offset,omitempty"`
+	Default int  `json:"default,omitempty"`
 
 	//TODO: In future, we can use the following to do proper querying for special cases, like sorting etc.
 	//Restrict map[string]string `json:"restrict,omitempty"`

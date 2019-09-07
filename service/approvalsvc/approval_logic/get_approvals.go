@@ -22,12 +22,12 @@ func GetApprovals(ctx context.Context, req model.GetApprovalsRequest, db *gorm.D
 		tmpDB = db.Table(model.APPROVAL_TABLE).Order("deadline ASC")
 	}
 
-	if req.Offset != -1 {
-		tmpDB = tmpDB.Offset(req.Offset)
+	if req.Offset != nil {
+		tmpDB = tmpDB.Offset(*req.Offset)
 	}
 
-	if req.Limit != -1 {
-		tmpDB = tmpDB.Limit(req.Limit)
+	if req.Limit != nil {
+		tmpDB = tmpDB.Limit(*req.Limit)
 	}
 
 	tmpDB.Find(&approvalItems)

@@ -14,5 +14,6 @@ const (
 	ERROR_UNABLE_TO_MARSHAL               = "Unable to do json marshaling"
 	PQ_ERROR_FOREIGN_KEY_VIOLATION        = "23503"
 	PQ_ERROR_NO_ROWS_FOUND                = "No Records with the same ID were found!"
+	PQ_SUCH_SERVICE_RULE_FOUND            = "No such service rule found!"
 	PQ_SERVICE_RULE_CONSTRAINT            = "ServiceRuleFK"
 )
