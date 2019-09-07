@@ -59,6 +59,7 @@ Refer to service\approvalsvc\model\approval.go
 | 6 | STATUS_ACKNOWLEDGED_APPROVED | When the approver submits their request, before making a call to the designated server, the object will be marked as this state if the approver marks it as approved  |
 | 7 | STATUS_ACKNOWLEDGED_REJECTED | Similar to 6 |
 | 8 | STATUS_ACKNOWLEDGED_CANCELLED | Similar to 6 |
+
 ![StateDiagram](/images/state.png?raw=true "State Diagram Image")
 
 # Sequence Digram
