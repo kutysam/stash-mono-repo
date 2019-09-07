@@ -18,6 +18,10 @@ User service is a sample service created with service rule = 1. For objects that
 # API Documentation
 Refer to the swagger documentation [here](https://app.swaggerhub.com/apis/kutysam/StashApprovalAPI/1)
 If you want to test, feel free to use the swagger UI. I've already appended the hosts to be kutysam.ddns.net and use click authorize first with `stashapprovalapikey` as the apikey.
+To do a simple test on the service (Assuming all valid data),
+1. PUT API (Create a new approval)
+2. GET API (Get the request)
+3. POST API (Change the status)
 
 # How does the service work & Rules
 ## Working mechanism [Assuming all is valid]
