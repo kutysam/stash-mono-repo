@@ -12,6 +12,7 @@ import (
 	"stash-mono-repo/service/approvalsvc/model"
 
 	"github.com/jinzhu/gorm"
+	"github.com/lib/pq"
 )
 
 /*
@@ -200,6 +201,7 @@ func sendRequestToServiceRule(db *gorm.DB, serviceRule model.ServiceRule, approv
 	if err != nil {
 		fmt.Println(err) // TODO: Move to log service
 		err = errors.New(model.ERROR_UNABLE_TO_MARSHAL)
+		updateErrorToDB(db, toUpdate, approvalToSend, err)
 		return
 	}
 
@@ -207,6 +209,7 @@ func sendRequestToServiceRule(db *gorm.DB, serviceRule model.ServiceRule, approv
 	if err != nil {
 		fmt.Println(err)
 		err = errors.New(model.ERROR_UPDATING_SERVICE)
+		updateErrorToDB(db, toUpdate, approvalToSend, err)
 		return
 	}
 	request.Header.Add("Authorization", serviceRule.Apikey)
@@ -218,6 +221,7 @@ func sendRequestToServiceRule(db *gorm.DB, serviceRule model.ServiceRule, approv
 	if err != nil {
 		fmt.Println(err) // TODO: Move to log service
 		err = errors.New(model.ERROR_UPDATING_SERVICE)
+		updateErrorToDB(db, toUpdate, approvalToSend, err)
 		return
 	}
 
@@ -226,6 +230,7 @@ func sendRequestToServiceRule(db *gorm.DB, serviceRule model.ServiceRule, approv
 		fmt.Print(resp.StatusCode) // TODO: Move to log service
 		fmt.Println(string(body))  // TODO: Move to log service
 		err = errors.New(model.ERROR_UPDATING_SERVICE)
+		updateErrorToDB(db, toUpdate, approvalToSend, err)
 		return
 	} else {
 		var result model.SendChangedApprovalResponse
@@ -243,6 +248,12 @@ func sendRequestToServiceRule(db *gorm.DB, serviceRule model.ServiceRule, approv
 	// We check if there is an error, if there is an error talking to the designated service, we stop and mark the request as errored and update the database.
 	// The developer can do some slack notification etc. over here to immediately alert the people.
 	// If there is no error, we just send a 200 OK and the updated fields back to client.
+	updateErrorToDB(db, toUpdate, approvalToSend, err)
+
+	return
+}
+
+func updateErrorToDB(db *gorm.DB, toUpdate map[string]interface{}, approvalToSend model.SendChangedApprovalRequest, err error) {
 	if err != nil {
 		fmt.Println(err) // TODO: Log this error down
 		toUpdate["status"] = model.STATUS_ERROR
@@ -262,8 +273,6 @@ func sendRequestToServiceRule(db *gorm.DB, serviceRule model.ServiceRule, approv
 			return
 		}
 	}
-
-	return
 }
 
 // We update the table here
@@ -271,6 +280,13 @@ func updateApprovalTable(db *gorm.DB, toUpdate map[string]interface{}, id string
 	tmpDB := db.Table(model.APPROVAL_TABLE).Where("id = ?", id).Updates(toUpdate)
 	if tmpDB.Error != nil {
 		fmt.Println(tmpDB.Error) //TODO: Move to log service
+		pqErr, ok := tmpDB.Error.(*pq.Error)
+		if ok {
+			if pqErr.Code == model.PQ_ERROR_FOREIGN_KEY_VIOLATION && pqErr.Constraint == model.PQ_SERVICE_RULE_CONSTRAINT {
+				err = errors.New(model.ERROR_SERVICE_RULE_INVALID_CONSTRAINT)
+				return
+			}
+		}
 		err = errors.New(model.ERROR_DATABASE_ERROR)
 		return
 	}
