@@ -2,12 +2,14 @@
 This repo is a mono repo and consists of 2 services [UserService and ApprovalService]. It is written in golang with go-kit microservices framework.
 The purpose of this is to simulate a simple approval service based on some rules.
 Current it is selfhosted on my Raspberry pi. Postgres, golang are all installed on it.
+Use the swagger documentation if you want to test the APIs on the raspberry pi without going through local setup.
+If it is down, please ping me.
 
-# Installation
+# Local Setup
 1. Ensure that you have golang installed
 2. Clone the repo to $GOPATH/src e.g. /users/sathishramani/go/src/<REPO>
 3. Make sure you have dep install. Otherwise, follow [instructions](https://golang.github.io/dep/docs/installation.html). After which, run `dep ensure`
-4. Change the db connection string in main.go and restore approvaldb.tar to have seed data. We are using postgresDB here.
+4. Change the db connection string in main.go and create a DB called Approval and restore images/approvaldb.tar to have seed data. We are using postgresDB here.
 5. `go run cmd/approvalsvc/main.go` [For approval service] && `go run cmd/usersvc/main.go` [For user service]
 User service is a sample service created with service rule = 1. For objects that have been approved with service rule 1, they will be sent to userservice.
 
@@ -60,11 +62,17 @@ There are only 4 endpoints. This sequence diagram is a high level overview on ho
 Errors are checked accordingly but are not shown in the sequence diagram for now.
 ![SequenceDiagram](/images/sequence.png?raw=true "State Diagram Image")
 
+# Additional Notes
+1. Error checking has been done locally. Basically, I run through the flow using my own tests to ensure that the user cannot send invalid requests.
+2. One important thing to take note in the logic is that, when a request confirmed to be approved / rejected / cancelled, the user can ONLY change the comment and nothing else. Do try it out and you will receive an error message if you input other changes like title etc.
+3. When we send the request to the other server once it is in pending state, we will send the request JSON in the specified example format given in swagger. It is the duty of that service, to have a mapping of the original UUID approval object (when they created it) and logic depends on them. We only send a standard approval object JSON to the server when we receive an Approved / Rejected / Cancelled status.
+4. Yes, the repo is a mono repo but, it is as such just for demonstration. User service is considered to be the '3rd' party service. There is no documentation for service rule, if you want to create a new service rule, please update the database directly for now. Right now, we only have 2 service rules, service rule 1 = http://kutysam.ddns.net:8001/approval and service rule 2 = invalidurl (Just to show error)
+
 # Future Changes
 ## V1.0 [We cannot launch without these 3 important features]
 1. Have another table called history. We will log down every change that happens to any approval object to here, be it, comment, title etc. This will be used as an audit log.
 2. Have proper security measures (API_KEY for services and JWT for user accounts)
-3. Have another column called previous state so that the user will know which state was he in, in case the state changes to error.
+3. Have another column called previous state so that the user will know which state was he in, in case the state changes to error. Whether we should strictly follow the previous state, needs a team discussion.
 4. Have a proper state machine diagram rather than using 'hardcoded' rules.
 5. Proper error codes instead of all being 500.
 
